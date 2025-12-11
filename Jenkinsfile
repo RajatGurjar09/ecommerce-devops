@@ -2,16 +2,19 @@ pipeline {
     agent any
 
     environment {
-        // Use your GitHub PAT credentials configured in Jenkins
-        GIT_CREDENTIALS = 'github-pat'
+        DOCKER_HOST = 'unix:///var/run/docker.sock'
     }
 
     stages {
+        stage('Checkout SCM') {
+            steps {
+                checkout scm
+            }
+        }
+
         stage('Checkout Code') {
             steps {
-                git branch: 'master',
-                    url: 'https://github.com/RajatGurjar09/ecommerce-devops.git',
-                    credentialsId: "${GIT_CREDENTIALS}"
+                git url: 'https://github.com/RajatGurjar09/ecommerce-devops.git', credentialsId: 'github-pat'
             }
         }
 
@@ -41,8 +44,18 @@ pipeline {
 
         stage('Deploy Services') {
             steps {
-                // Use host's docker compose via mounted socket
-                sh 'docker compose -f /var/jenkins_home/workspace/ecommerce-pipeline/docker-compose.yml up -d'
+                script {
+                    def composeCmd = ''
+                    if (sh(script: 'command -v docker-compose', returnStatus: true) == 0) {
+                        composeCmd = 'docker-compose'
+                    } else if (sh(script: 'docker compose version', returnStatus: true) == 0) {
+                        composeCmd = 'docker compose'
+                    } else {
+                        error "Docker Compose not found!"
+                    }
+
+                    sh "${composeCmd} -f /var/jenkins_home/workspace/ecommerce-pipeline/docker-compose.yml up -d"
+                }
             }
         }
     }
@@ -52,7 +65,7 @@ pipeline {
             echo 'Pipeline finished.'
         }
         success {
-            echo 'All services built and deployed successfully!'
+            echo 'Deployment successful!'
         }
         failure {
             echo 'Pipeline failed. Check logs for errors.'
