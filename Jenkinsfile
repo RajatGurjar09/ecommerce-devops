@@ -44,18 +44,13 @@ pipeline {
 
         stage('Deploy Services') {
             steps {
-                script {
-                    def composeCmd = ''
-                    if (sh(script: 'command -v docker-compose', returnStatus: true) == 0) {
-                        composeCmd = 'docker-compose'
-                    } else if (sh(script: 'docker compose version', returnStatus: true) == 0) {
-                        composeCmd = 'docker compose'
-                    } else {
-                        error "Docker Compose not found!"
-                    }
+                sh '''
+                # Stop and remove any existing containers for this project
+                docker-compose -f /var/jenkins_home/workspace/ecommerce-pipeline/docker-compose.yml down
 
-                    sh "${composeCmd} -f /var/jenkins_home/workspace/ecommerce-pipeline/docker-compose.yml up -d"
-                }
+                # Start all services, rebuild images if needed
+                docker-compose -f /var/jenkins_home/workspace/ecommerce-pipeline/docker-compose.yml up -d --build
+                '''
             }
         }
     }
