@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Local E-Commerce Frontend</title>
+</head>
+<body>
+    <h1>Product List</h1>
+    <ul id="product-list"></ul>
+
+    <h2>Cart</h2>
+    <ul id="cart-list"></ul>
+
+    <h2>Order</h2>
+    <ul id="order-list"></ul>
+
+    <script>
+        const productList = document.getElementById('product-list');
+        const cartList = document.getElementById('cart-list');
+        const orderList = document.getElementById('order-list');
+
+        // Fetch products
+        fetch('http://localhost:8001/products')
+            .then(res => res.json())
+            .then(data => {
+                data.forEach(p => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `${p.name} - ₹${p.price} <button onclick="addToCart(${p.id})">Add to Cart</button>`;
+                    productList.appendChild(li);
+                });
+            });
+
+        // Cart operations
+        function addToCart(productId){
+            fetch(`http://localhost:8002/cart/add/${productId}`, {method:'POST'})
+            .then(res => res.json())
+            .then(updateCart)
+        }
+
+        function removeFromCart(productId){
+            fetch(`http://localhost:8002/cart/remove/${productId}`, {method:'POST'})
+            .then(res => res.json())
+            .then(updateCart)
+        }
+
+        function updateCart(data){
+            cartList.innerHTML = '';
+            data.cart.forEach(item => {
+                const li = document.createElement('li');
+                li.innerHTML = `Product ID: ${item.product_id} <button onclick="removeFromCart(${item.product_id})">Remove</button>`;
+                cartList.appendChild(li);
+            });
+        }
+
+        // Orders
+        function placeOrder(productId){
+            fetch(`http://localhost:8003/order/create/${productId}`, {method:'POST'})
+            .then(res => res.json())
+            .then(data => {
+                const li = document.createElement('li');
+                li.textContent = `Order ID: ${data.order.order_id} for Product ID: ${data.order.product_id}`;
+                orderList.appendChild(li);
+            })
+        }
+
+        // Update cart on load
+        fetch('http://localhost:8002/cart').then(res=>res.json()).then(updateCart)
+    </script>
+</body>
+</html>
+

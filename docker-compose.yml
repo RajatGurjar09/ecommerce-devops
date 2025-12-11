@@ -1,0 +1,38 @@
+version: '3.9'
+
+services:
+  product-service:
+    build: ./source-code/product-service
+    container_name: product-service
+    ports:
+      - "8001:8001"
+
+  cart-service:
+    build: ./source-code/cart-service
+    container_name: cart-service
+    ports:
+      - "8002:8002"
+
+  order-service:
+    build: ./source-code/order-service
+    container_name: order-service
+    ports:
+      - "8003:8003"
+
+  jenkins:
+    image: jenkins/jenkins:lts
+    user: root
+    privileged: true
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+    environment:
+      - DOCKER_HOST=unix:///var/run/docker.sock
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /usr/bin/docker:/usr/bin/docker
+
+volumes:
+  jenkins_home:
+
