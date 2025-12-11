@@ -1,12 +1,17 @@
 pipeline {
     agent any
 
+    environment {
+        // Use your GitHub PAT credentials configured in Jenkins
+        GIT_CREDENTIALS = 'github-pat'
+    }
+
     stages {
         stage('Checkout Code') {
             steps {
                 git branch: 'master',
                     url: 'https://github.com/RajatGurjar09/ecommerce-devops.git',
-                    credentialsId: 'github-pat'
+                    credentialsId: "${GIT_CREDENTIALS}"
             }
         }
 
@@ -36,8 +41,21 @@ pipeline {
 
         stage('Deploy Services') {
             steps {
-                sh 'docker-compose up -d'
+                // Use host's docker compose via mounted socket
+                sh 'docker compose -f /var/jenkins_home/workspace/ecommerce-pipeline/docker-compose.yml up -d'
             }
+        }
+    }
+
+    post {
+        always {
+            echo 'Pipeline finished.'
+        }
+        success {
+            echo 'All services built and deployed successfully!'
+        }
+        failure {
+            echo 'Pipeline failed. Check logs for errors.'
         }
     }
 }
