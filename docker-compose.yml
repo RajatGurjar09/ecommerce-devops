@@ -23,15 +23,15 @@ services:
     image: jenkins/jenkins:lts
     user: root
     privileged: true
+    environment:
+      - DOCKER_HOST=unix:///var/run/docker.sock
     ports:
       - "8080:8080"
       - "50000:50000"
-    environment:
-      - DOCKER_HOST=unix:///var/run/docker.sock
     volumes:
       - jenkins_home:/var/jenkins_home
-      - /var/run/docker.sock:/var/run/docker.sock
-      - /usr/bin/docker:/usr/bin/docker
+      - /var/run/docker.sock:/var/run/docker.sock   # use host docker
+      - /usr/bin/docker:/usr/bin/docker             # use host docker CLI
 
 volumes:
   jenkins_home:
