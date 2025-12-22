@@ -11,3 +11,9 @@ starlette==0.50.0
 typing-inspection==0.4.2
 typing_extensions==4.15.0
 uvicorn==0.38.0
+requests==2.31.0
+
+# 🔽 NEW
+sqlalchemy==2.0.29
+psycopg2-binary==2.9.9
+
