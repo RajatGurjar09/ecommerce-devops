@@ -1,11 +1,12 @@
-from fastapi import FastAPI, Request, HTTPException
 import requests
+from fastapi import FastAPI, Request, Response
 
-app = FastAPI(title="API Gateway")
+app = FastAPI()
 
 PRODUCT_SERVICE = "http://product-service:8001"
 CART_SERVICE = "http://cart-service:8002"
 ORDER_SERVICE = "http://order-service:8003"
+PAYMENT_SERVICE = "http://payment-service:8004"
 
 
 @app.get("/health")
@@ -13,37 +14,45 @@ def health():
     return {"status": "API Gateway is healthy"}
 
 
-# -------- Product Routes --------
-@app.get("/products")
-def get_products():
-    r = requests.get(f"{PRODUCT_SERVICE}/products")
-    return r.json()
+@app.api_route("/products/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
+async def proxy_products(path: str, request: Request):
+    return await proxy_request(request, f"{PRODUCT_SERVICE}/products/{path}")
 
 
-# -------- Cart Routes --------
-@app.post("/cart/add/{product_id}")
-def add_to_cart(product_id: int):
-    r = requests.post(f"{CART_SERVICE}/cart/add/{product_id}")
-    return r.json()
+@app.api_route("/cart/{path:path}", methods=["GET", "POST", "DELETE"])
+async def proxy_cart(path: str, request: Request):
+    return await proxy_request(request, f"{CART_SERVICE}/cart/{path}")
 
 
-@app.get("/cart")
-def get_cart():
-    r = requests.get(f"{CART_SERVICE}/cart")
-    return r.json()
+@app.api_route("/order/{path:path}", methods=["GET", "POST"])
+async def proxy_order(path: str, request: Request):
+    return await proxy_request(request, f"{ORDER_SERVICE}/order/{path}")
 
 
-# -------- Order Routes --------
-@app.post("/order/from-cart")
-def create_order():
-    r = requests.post(f"{ORDER_SERVICE}/order/from-cart")
-    if r.status_code != 200:
-        raise HTTPException(status_code=500, detail="Order creation failed")
-    return r.json()
+@app.api_route("/orders", methods=["GET"])
+async def get_orders(request: Request):
+    return await proxy_request(request, f"{ORDER_SERVICE}/orders")
 
 
-@app.get("/orders")
-def get_orders():
-    r = requests.get(f"{ORDER_SERVICE}/orders")
-    return r.json()
+@app.api_route("/payment/{path:path}", methods=["POST", "GET"])
+async def proxy_payment(path: str, request: Request):
+    return await proxy_request(request, f"{PAYMENT_SERVICE}/payment/{path}")
+
+
+async def proxy_request(request: Request, url: str):
+    body = await request.body()
+
+    response = requests.request(
+        method=request.method,
+        url=url,
+        headers={k: v for k, v in request.headers.items() if k.lower() != "host"},
+        data=body,
+        params=request.query_params,
+    )
+
+    return Response(
+        content=response.content,
+        status_code=response.status_code,
+        headers=dict(response.headers),
+    )
 

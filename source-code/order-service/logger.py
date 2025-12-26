@@ -1,30 +1,15 @@
 import logging
-import json
-from datetime import datetime
 
-class JsonFormatter(logging.Formatter):
-    def format(self, record):
-        log_record = {
-            "timestamp": datetime.utcnow().isoformat(),
-            "level": record.levelname,
-            "service": "order-service",
-            "message": record.getMessage()
-        }
-
-        if hasattr(record, "extra_data"):
-            log_record.update(record.extra_data)
-
-        return json.dumps(log_record)
-
-
-def get_logger():
-    logger = logging.getLogger("order-service")
+def get_logger(name: str):
+    logger = logging.getLogger(name)
     logger.setLevel(logging.INFO)
 
-    handler = logging.StreamHandler()
-    handler.setFormatter(JsonFormatter())
-
     if not logger.handlers:
+        handler = logging.StreamHandler()
+        formatter = logging.Formatter(
+            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        )
+        handler.setFormatter(formatter)
         logger.addHandler(handler)
 
     return logger
